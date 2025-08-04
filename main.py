@@ -11,7 +11,8 @@ this would be a new object everytime someone would like to initialize a csv.
 do not trust the user for any inputs, hence why we do not get data from the csv to execute
 that wouldbe retarded af. only extract and put, not execute.
 
-
+TODO:
+we need to implement dictionary usage in this for easier data manipulation, further down the line
 
 """
  #len is 6 when there are no comments  on the room
@@ -154,20 +155,26 @@ class extract_from_csv:
 def main():
     test = []
 
-    hhc_roster = extract_from_csv("racks_roster/19751hhc.csv", 19751)
+    bldg_19751 = extract_from_csv("racks_roster/HHC BARRACKS ROSTER 10JUL25(19751).csv", 19751)
 
-    test_roster = extract_from_csv("racks_roster/19753_199th July Barracks Tracker(19753).csv", 19753)
+    bldg_19753 = extract_from_csv("racks_roster/199th Tracker August 2025(19753).csv", 19753)
 
-    alpha_roster = extract_from_csv("racks_roster/19755_ACO_FEB25(19755).csv", 19755)
+    bldg_19755 = extract_from_csv("racks_roster/19755_ACO_FEB25(19755) (1).csv", 19755)
     
-    potato_roster = extract_from_csv("racks_roster/19757_104thMICO_Roster(Sheet1).csv", 19757)
+    bldg_19757 = extract_from_csv("racks_roster/19757_104thMICO_Roster(Sheet1).csv", 19757)
+
+
         #alpha_roster = extract_from_csv("racks/19755_ACO_FEB25(19755).csv", 19755)
-    test = [*hhc_roster.personnel, *test_roster.personnel, *alpha_roster.personnel, *potato_roster.personnel]
+    sorted_roster = sorted([*bldg_19751.personnel, *bldg_19753.personnel, *bldg_19755.personnel, *bldg_19757.personnel], key=lambda last_name: last_name[2])
 
-    print(test)
 
-    for things in test:
-        print(things)
+
+    for soldier_deets in sorted_roster:
+        print(" Last: {2}:: BLDG NUM: {0}, Rank: {1}, First: {3}, Sex: {4}, Room#: {5}".format(
+            soldier_deets[-1], soldier_deets[4], 
+            soldier_deets[2], soldier_deets[3], 
+            soldier_deets[1], soldier_deets[0], 
+        ))
 
 
 if __name__ == "__main__":
