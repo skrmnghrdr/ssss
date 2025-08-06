@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>racks Roster</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        button { margin: 5px; padding: 8px 12px; }
+        #container {
+            display: flex;
+            margin-top: 20px;
+        }
+        #second-level {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 300px; /* wider to accommodate more text */
+            /* removed scroll as requested previously */
+        }
+        #details {
+            margin-left: 20px;
+            flex-grow: 1;
+            background: #eee;
+            padding: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        #first-level {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: nowrap;
+        }
+        #first-level button { margin: 5px 0; }
+        #search-box {
+            padding: 6px 10px;
+            font-size: 1rem;
+            width: 200px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            #container {
+                flex-direction: column;
+            }
+            #second-level {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            #details {
+                margin-left: 0;
+                width: 100%;
+            }
+            #first-level {
+                flex-wrap: wrap;
+            }
+            #first-level button, #search-box {
+                flex: 1 1 100%;
+                margin: 5px 0;
+                min-width: 0; /* fix shrinking issue */
+            }
+            button {
+                padding: 12px 20px;
+                font-size: 1.1rem;
+                min-width: 100%;
+                box-sizing: border-box;
+            }
+            #search-box {
+                font-size: 1.1rem;
+                padding: 10px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- First-level buttons + Search -->
+    <div id="first-level">
+        {% for unit_id in data.keys() %}
+            <button onclick="showSecondLevel('{{ unit_id }}')">
+                {{ unit_id }}
+            </button>
+        {% endfor %}
+        <input type="text" id="search-box" placeholder="Search people..." oninput="performSearch(this.value)">
+<div style="text-align: center; margin-top: 5px; font-size: 1rem;">
+    &nbsp;&nbsp;Date Updated: {{ datenow }}
+</div>
+    </div>
+
+    <div id="container">
+        <!-- Second-level vertical list -->
+        <div id="second-level"></div>
+        <!-- Details side-by-side -->
+        <div id="details">Select a unit to see details</div>
+    </div>
+
+    <script>
+        const data = {{ data|tojson }};
+
+        function showSecondLevel(unitId) {
+            const container = document.getElementById("second-level");
+            container.innerHTML = "";
+
+            const people = data[unitId];
+            let firstPersonId = null;
+
+            for (let personId in people) {
+                if (!firstPersonId) firstPersonId = personId;
+                const btn = document.createElement("button");
+                btn.innerText = personId + " - " + people[personId].first + " " + people[personId].last;
+                btn.onclick = function() { showDetails(unitId, personId); highlightSelected(btn); };
+                container.appendChild(btn);
+            }
+
+            if (firstPersonId) {
+                showDetails(unitId, firstPersonId);
+                highlightSelected(container.firstChild);
+            } else {
+                document.getElementById("details").innerHTML = "No data";
+            }
+        }
+
+        function showDetails(unitId, personId) {
+            const details = data[unitId][personId];
+            const container = document.getElementById("details");
+            container.innerHTML = "";
+            for (const key in details) {
+                const line = document.createElement("div");
+                line.innerHTML = "<strong>" + key.charAt(0).toUpperCase() + key.slice(1) + ":</strong> " + details[key];
+                container.appendChild(line);
+            }
+        }
+
+        function highlightSelected(selectedBtn) {
+            const container = document.getElementById("second-level");
+            [...container.children].forEach(btn => {
+                btn.style.backgroundColor = btn === selectedBtn ? "#add8e6" : "";
+            });
+        }
+
+        // New search function
+        function performSearch(query) {
+            const container = document.getElementById("second-level");
+            const detailsDiv = document.getElementById("details");
+            container.innerHTML = "";
+            detailsDiv.textContent = "";
+
+            if (!query.trim()) {
+                // If search box is cleared, reset view
+                detailsDiv.textContent = "Select building number or search";
+                return;
+            }
+
+            query = query.toLowerCase();
+
+            // Search all people in all units
+            let foundAny = false;
+            for (const unitId in data) {
+                const people = data[unitId];
+                for (const personId in people) {
+                    const person = people[personId];
+                    // Combine all searchable fields into one string
+                    const searchableText = 
+                        `${personId} ${person.first} ${person.last} ${person.rank} ${person.sex} ${person.company} ${person.phone_number} ${person.comments}`.toLowerCase();
+
+                    if (searchableText.includes(query)) {
+                        foundAny = true;
+                        const btn = document.createElement("button");
+                        btn.innerText = `${unitId} / ${personId} - ${person.first} ${person.last}`;
+                        btn.onclick = function() { 
+                            showDetails(unitId, personId); 
+                            highlightSelected(btn);
+                        };
+                        container.appendChild(btn);
+                    }
+                }
+            }
+
+            if (!foundAny) {
+                container.textContent = "No matches found";
+            }
+        }
+    </script>
+</body>
+</html>

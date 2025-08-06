@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 import csv
 import re
+import pprint
+import json
+from  jinja2 import Environment, FileSystemLoader
+from datetime import datetime
 
 #setup the dang debugger to actually go here
 """
@@ -13,7 +17,9 @@ that wouldbe retarded af. only extract and put, not execute.
 
 TODO:
 we need to implement dictionary usage in this for easier data manipulation, further down the line
-
+we need to fix the elif and turn it to a regular if, 
+    so it does not skip the entire row if it matches the first row
+we could refactor the row reader intoa function, that way  it looks cleaner
 """
  #len is 6 when there are no comments  on the room
 
@@ -33,6 +39,26 @@ def hasher(csv):
 class extract_from_csv:
     """
     extracts our personnel from all the data in the csv provided
+    self.personnel: list: contains the personnel
+    self.building_info: dictionary: contains the bldg number
+    and the personnel inside the building number
+
+    dictionary structure:
+    self.building_info = {
+        "<bldg_number>" : {self.building_info_details}
+    }
+
+    self.building_info_details: dictionary: used to populate the inner dictionary:
+    dictionary structure:
+        self.building_info_details = {
+        "last" :"str",
+        "first": "str",
+        "rank" : "str",
+        "sex" : "str",
+        "company" : "str",
+        "phone_number": "str",
+        "comments" : "str",
+        }
     """
 
     def __init__(self, path: str, csv_type: int):
@@ -45,6 +71,11 @@ class extract_from_csv:
         self.path = path
         self.csv_type = csv_type
         self.personnel = []
+        self.building_info = { str(csv_type) :{} }
+        #redundant but cleaner code
+        self.building_info_details = self.building_info[str(csv_type)]
+        
+
 
         
         #populate the list with personnel
@@ -73,76 +104,182 @@ class extract_from_csv:
         row_buffer.append(str(bldg_num))
         return row_buffer                           
 
-    def _get_personnel(self):
-        """helper function for future implementation
-        of web interface, debating on jsonifying it
-
-        Returns:
-            self.personnel: array type 2D
-            [
-                [data, data, data ...], 
-                [data, data, data ....]
-            ]
+    def _process_19751(self):
+        """populates the get self.personnel array
         """
-        max_row_len = 0
+        HORIZONTAL_CELL_SKIP = 15 
+        #we skip 15 cells cause actual roster starts at horizontal 15
+        FIRST_FLOOR_UNIT = 5
+        SECOND_FLOOR_UNIT = 13
+        THIRD_FLOOR_UNIT = 21
+        """
+        first chunk of info is from 0:7, then 8:15, then 16:23
+        processess the 19751 csv [type
+        """
+        with open(self.path) as excel_spread_cheeks:
+            reader = csv.reader(excel_spread_cheeks)
+            max_row_len = 7
+                        #implement their own function here so this would be cleaner
+            for _ in range(HORIZONTAL_CELL_SKIP):
+                next(excel_spread_cheeks)
+            for row in reader:
+                            #eventuall replace 11th wtih regex
+                if row[FIRST_FLOOR_UNIT] in ("11TH", "CYBER"):
+                    self.personnel.append(self.pretty_format(row[0:7], max_row_len, self.csv_type))
+                if row[SECOND_FLOOR_UNIT] in ("11TH", "CYBER"):
+                    self.personnel.append(self.pretty_format(row[8:15], max_row_len, self.csv_type))
+                if row[THIRD_FLOOR_UNIT] in  ("11TH", "CYBER"):
+                    self.personnel.append(self.pretty_format(row[16:23], max_row_len, self.csv_type))
+            
+            for person_deets in self.personnel:
+                #optional refractor for this? we could make a function that would just take an argument and add to dict
+                #or we could just keep doing this, sinc each csv would need custom coordiantes
+
+                room_number =  str(person_deets[0])
+                self.building_info_details.update({room_number: {}})
+                self.building_info_details[room_number].update( {'last': str(person_deets[2]) })
+                self.building_info_details[room_number].update( {'first': str(person_deets[3]) })
+                self.building_info_details[room_number].update( {'rank': str(person_deets[4]) })
+                self.building_info_details[room_number].update( {'sex': str(person_deets[1]) })
+                self.building_info_details[room_number].update( {'company': ""}) #blank for now, you have to edit
+                self.building_info_details[room_number].update( {'phone_number': ""})
+                self.building_info_details[room_number].update( {'comments': ""})
+            
+    def _process_19753(self):
+        """populates the get self.personnel array
+        """
+        with open(self.path) as excel_spread_cheeks:
+            reader = csv.reader(excel_spread_cheeks)
+
+            HORIZONTAL_CELL_SKIP = 15 
+            #we skip 15 cells cause actual roster starts at horizontal 15
+            FIRST_FLOOR_UNIT = 5
+            SECOND_FLOOR_UNIT = 13
+            THIRD_FLOOR_UNIT = 21
+            max_row_len = 6
+            for _ in range(HORIZONTAL_CELL_SKIP):
+                next(excel_spread_cheeks)
+            for row in reader:
+                if (row[FIRST_FLOOR_UNIT] in ("11TH", "CYBER")):
+                    self.personnel.append(self.pretty_format(row[0:6], max_row_len, self.csv_type))
+                if (row[SECOND_FLOOR_UNIT] in  ("11TH", "CYBER")):
+                    self.personnel.append(self.pretty_format(row[8:14], max_row_len, self.csv_type))
+                if (row[THIRD_FLOOR_UNIT] in  ("11TH", "CYBER")):
+                    self.personnel.append(self.pretty_format(row[16:22], max_row_len, self.csv_type))
+
+            for person_deets in self.personnel:
+                room_number =  str(person_deets[0])
+                self.building_info_details.update({room_number: {}})
+                self.building_info_details[room_number].update( {'last': str(person_deets[2]) })
+                self.building_info_details[room_number].update( {'first': str(person_deets[3]) })
+                self.building_info_details[room_number].update( {'rank': str(person_deets[4]) })
+                self.building_info_details[room_number].update( {'sex': str(person_deets[1]) })
+                self.building_info_details[room_number].update( {'company': ""}) #blank for now, you have to edit
+                self.building_info_details[room_number].update( {'phone_number': ""})
+                self.building_info_details[room_number].update( {'comments': ""})
+
+    def _process_19755(self):
+        """populates the get self.personnel array
+        """
+        with open(self.path) as excel_spread_cheeks:
+            reader = csv.reader(excel_spread_cheeks)
+
+            HORIZONTAL_CELL_SKIP = 15 
+            #we skip 15 cells cause actual roster starts at horizontal 15
+            FIRST_FLOOR_UNIT = 5
+            SECOND_FLOOR_UNIT = 13
+            THIRD_FLOOR_UNIT = 21
+
+            max_row_len = 7
+            for _ in range(HORIZONTAL_CELL_SKIP):
+                next(excel_spread_cheeks)
+            for row in reader:
+                if (row[FIRST_FLOOR_UNIT] in ("11TH", "CYB")):
+                    self.personnel.append(self.pretty_format(row[0:6], max_row_len, self.csv_type))
+                if (row[SECOND_FLOOR_UNIT] in  ("11TH", "CYB")):
+                    self.personnel.append(self.pretty_format(row[8:14], max_row_len, self.csv_type))
+                if (row[THIRD_FLOOR_UNIT] in  ("11TH", "CYB")):
+                    self.personnel.append(self.pretty_format(row[16:22], max_row_len, self.csv_type))
+
+
+            for person_deets in self.personnel:
+                #optional refractor for this? we could make a function that would just take an argument and add to dict
+                #or we could just keep doing this, sinc each csv would need custom coordiantes
+
+                room_number =  str(person_deets[0])
+                self.building_info_details.update({room_number: {}})
+                self.building_info_details[room_number].update( {'last': str(person_deets[2]) })
+                self.building_info_details[room_number].update( {'first': str(person_deets[3]) })
+                self.building_info_details[room_number].update( {'rank': str(person_deets[4]) })
+                self.building_info_details[room_number].update( {'sex': str(person_deets[1]) })
+                self.building_info_details[room_number].update( {'company': ""}) #blank for now, you have to edit
+                self.building_info_details[room_number].update( {'phone_number': ""})
+                self.building_info_details[room_number].update( {'comments': ""})
+            
+    def _process_19757(self):
+        """populates the get self.personnel array
+        """
+        HORIZONTAL_CELL_SKIP = 12 
+        #we skip 15 cells cause actual roster starts at horizontal 15
+        FIRST_FLOOR_UNIT = 5
+        SECOND_FLOOR_UNIT = 16
+        THIRD_FLOOR_UNIT = 27
 
         with open(self.path) as excel_spread_cheeks:
             reader = csv.reader(excel_spread_cheeks)
-            print("Debuganchor")
-            match self.csv_type:
-                
-                case 19751: #HHC
-                    max_row_len = 7
-                    #implement their own function here so this would be cleaner
-                    for _ in range(15):
-                        next(excel_spread_cheeks)
-                    for row in reader:
-                        #eventuall replace 11th wtih regex
-                        if row[5] in ("11TH", "CYBER"):
-                            self.personnel.append(self.pretty_format(row[0:7], max_row_len, self.csv_type))
-                        elif row[13] in ("11TH", "CYBER"):
-                            self.personnel.append(self.pretty_format(row[8:15], max_row_len, self.csv_type))
-                        elif row[21] in  ("11TH", "CYBER"):
-                            self.personnel.append(self.pretty_format(row[16:23], max_row_len, self.csv_type))
 
-                case 19753: #rice 
-                    max_row_len = 6
-                    for _ in range(15):
-                        next(excel_spread_cheeks)
-                    for row in reader:
-                        if (row[5] in ("11TH", "CYBER")):
-                            self.personnel.append(self.pretty_format(row[0:6], max_row_len, self.csv_type))
-                        elif (row[13] in  ("11TH", "CYBER")):
-                            self.personnel.append(self.pretty_format(row[8:14], max_row_len, self.csv_type))
-                        elif (row[21] in  ("11TH", "CYBER")):
-                            self.personnel.append(self.pretty_format(row[16:22], max_row_len, self.csv_type))
-
-                case 19755: #Alpha
-                    max_row_len = 7
-                    for _ in range(15):
-                        next(excel_spread_cheeks)
-                    for row in reader:
-                        if (row[5] in ("11TH", "CYB")):
-                            self.personnel.append(self.pretty_format(row[0:6], max_row_len, self.csv_type))
-                        elif (row[13] in  ("11TH", "CYB")):
-                            self.personnel.append(self.pretty_format(row[8:14], max_row_len, self.csv_type))
-                        elif (row[21] in  ("11TH", "CYB")):
-                            self.personnel.append(self.pretty_format(row[16:22], max_row_len, self.csv_type))
-
-                case 19757: #potatoes
                     #this is a special case since they massacred the format on this one
-                    max_row_len = 7
-                    for _ in range(12):
-                        next(excel_spread_cheeks)
-                    for row in reader:
-                        if (row[5] in ("11TH", "CYB")):
-                            self.personnel.append(self.pretty_format(row[0:6], max_row_len, self.csv_type))
-                        elif (row[16] in  ("11TH", "CYB")):
-                            self.personnel.append(self.pretty_format(row[11:17], max_row_len, self.csv_type))
-                        elif (row[27] in  ("11TH", "CYB")):
-                            self.personnel.append(self.pretty_format(row[22:28], max_row_len, self.csv_type))
+            max_row_len = 7
+            for _ in range(HORIZONTAL_CELL_SKIP):
+                next(excel_spread_cheeks)
+            for row in reader:
+                if (row[FIRST_FLOOR_UNIT] in ("11TH", "CYB")):
+                    self.personnel.append(self.pretty_format(row[0:6], max_row_len, self.csv_type))
+                if (row[SECOND_FLOOR_UNIT] in  ("11TH", "CYB")):
+                    self.personnel.append(self.pretty_format(row[11:17], max_row_len, self.csv_type))
+                if (row[THIRD_FLOOR_UNIT] in  ("11TH", "CYB")):
+                    self.personnel.append(self.pretty_format(row[22:28], max_row_len, self.csv_type))
 
-                    pass
+            for person_deets in self.personnel:
+                #optional refractor for this? we could make a function that would just take an argument and add to dict
+                #or we could just keep doing this, sinc each csv would need custom coordiantes
+
+                room_number =  str(person_deets[0])
+                self.building_info_details.update({room_number: {}})
+                self.building_info_details[room_number].update( {'last': str(person_deets[2]) })
+                self.building_info_details[room_number].update( {'first': str(person_deets[3]) })
+                self.building_info_details[room_number].update( {'rank': str(person_deets[4]) })
+                self.building_info_details[room_number].update( {'sex': str(person_deets[1]) })
+                self.building_info_details[room_number].update( {'company': ""}) #blank for now, you have to edit
+                self.building_info_details[room_number].update( {'phone_number': ""})
+                self.building_info_details[room_number].update( {'comments': ""})
+            
+    def _get_personnel(self):
+        """fell to the voices, we'll be using dict
+
+        Returns:
+            dict = {
+            "<bldg_number> = {
+                "name"
+                "last"
+                "gender"
+                "contact"
+                "company"
+                "unit"
+                }
+            }
+        """
+        max_row_len = 0
+        match self.csv_type:
+                
+            case 19751: #HHC
+                self._process_19751()
+            case 19753: #rice 
+                self._process_19753()
+            case 19755: #Alpha
+                self._process_19755()
+            case 19757: #potatoes
+                self._process_19757()
 
         #we might probably stop using self.personnel someday
         #for speed? and computing efficiency
@@ -153,7 +290,6 @@ class extract_from_csv:
         print(personnel)
 
 def main():
-    test = []
 
     bldg_19751 = extract_from_csv("racks_roster/HHC BARRACKS ROSTER 10JUL25(19751).csv", 19751)
 
@@ -164,19 +300,38 @@ def main():
     bldg_19757 = extract_from_csv("racks_roster/19757_104thMICO_Roster(Sheet1).csv", 19757)
 
 
-        #alpha_roster = extract_from_csv("racks/19755_ACO_FEB25(19755).csv", 19755)
+    #alpha_roster = extract_from_csv("racks/19755_ACO_FEB25(19755).csv", 19755)
     sorted_roster = sorted([*bldg_19751.personnel, *bldg_19753.personnel, *bldg_19755.personnel, *bldg_19757.personnel], key=lambda last_name: last_name[2])
-
+    
+    dict_building_info = {**bldg_19751.building_info, **bldg_19753.building_info, **bldg_19755.building_info, **bldg_19757.building_info}
 
 
     for soldier_deets in sorted_roster:
-        print(" Last: {2}:: BLDG NUM: {0}, Rank: {1}, First: {3}, Sex: {4}, Room#: {5}".format(
+        print(" Last: {2}, sFirst: {3}, BLDG NUM: {0}, Rank: {1}, Sex: {4}, Room#: {5}".format(
             soldier_deets[-1], soldier_deets[4], 
             soldier_deets[2], soldier_deets[3], 
             soldier_deets[1], soldier_deets[0], 
         ))
 
+    #pprint.pprint(dict_building_info)
 
-if __name__ == "__main__":
+    #print(json.dumps(dict_building_info, indent=4))
+    #experiment time :)))
+    data = dict_building_info
+    env = Environment(loader=FileSystemLoader("."))
+    template = env.get_template("racksdata.html")
+
+    html_output = template.render(data=data, datenow=datetime.now().date())
+
+    with open("output.html", "w", encoding="utf-8") as f:
+        f.write(html_output)
+
+if __name__ == "__main__":  
     main()
     
+
+
+
+
+
+  
