@@ -330,6 +330,7 @@ def main():
         f.write(html_output)
 
 if __name__ == "__main__":  
+    print("WARNING, you have to make ./output/ first and racks_roster/ directories before use")
     main()
     
 
