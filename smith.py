@@ -126,12 +126,12 @@ class extract_from_csv:
                 next(excel_spread_cheeks)
             for row in reader:
                             #eventuall replace 11th wtih regex
-                if row[FIRST_FLOOR_UNIT] in ("11TH", "CYBER"):
-                    self.personnel.append(self.pretty_format(row[0:7], max_row_len, self.csv_type))
-                if row[SECOND_FLOOR_UNIT] in ("11TH", "CYBER"):
-                    self.personnel.append(self.pretty_format(row[8:15], max_row_len, self.csv_type))
-                if row[THIRD_FLOOR_UNIT] in  ("11TH", "CYBER"):
-                    self.personnel.append(self.pretty_format(row[16:23], max_row_len, self.csv_type))
+
+                self.personnel.append(self.pretty_format(row[0:7], max_row_len, self.csv_type))
+                
+                self.personnel.append(self.pretty_format(row[8:15], max_row_len, self.csv_type))
+                
+                self.personnel.append(self.pretty_format(row[16:23], max_row_len, self.csv_type))
             
             for person_deets in self.personnel:
                 #optional refractor for this? we could make a function that would just take an argument and add to dict
@@ -162,12 +162,12 @@ class extract_from_csv:
             for _ in range(HORIZONTAL_CELL_SKIP):
                 next(excel_spread_cheeks)
             for row in reader:
-                if (row[FIRST_FLOOR_UNIT] in ("11TH", "CYBER")):
-                    self.personnel.append(self.pretty_format(row[0:6], max_row_len, self.csv_type))
-                if (row[SECOND_FLOOR_UNIT] in  ("11TH", "CYBER")):
-                    self.personnel.append(self.pretty_format(row[8:14], max_row_len, self.csv_type))
-                if (row[THIRD_FLOOR_UNIT] in  ("11TH", "CYBER")):
-                    self.personnel.append(self.pretty_format(row[16:22], max_row_len, self.csv_type))
+                
+                self.personnel.append(self.pretty_format(row[0:6], max_row_len, self.csv_type))
+    
+                self.personnel.append(self.pretty_format(row[8:14], max_row_len, self.csv_type))
+                
+                self.personnel.append(self.pretty_format(row[16:22], max_row_len, self.csv_type))
 
             for person_deets in self.personnel:
                 room_number =  str(person_deets[0])
@@ -196,12 +196,12 @@ class extract_from_csv:
             for _ in range(HORIZONTAL_CELL_SKIP):
                 next(excel_spread_cheeks)
             for row in reader:
-                if (row[FIRST_FLOOR_UNIT] in ("11TH", "CYB")):
-                    self.personnel.append(self.pretty_format(row[0:6], max_row_len, self.csv_type))
-                if (row[SECOND_FLOOR_UNIT] in  ("11TH", "CYB")):
-                    self.personnel.append(self.pretty_format(row[8:14], max_row_len, self.csv_type))
-                if (row[THIRD_FLOOR_UNIT] in  ("11TH", "CYB")):
-                    self.personnel.append(self.pretty_format(row[16:22], max_row_len, self.csv_type))
+                
+                self.personnel.append(self.pretty_format(row[0:6], max_row_len, self.csv_type))
+                
+                self.personnel.append(self.pretty_format(row[8:14], max_row_len, self.csv_type))
+                
+                self.personnel.append(self.pretty_format(row[16:22], max_row_len, self.csv_type))
 
 
             for person_deets in self.personnel:
@@ -235,12 +235,12 @@ class extract_from_csv:
             for _ in range(HORIZONTAL_CELL_SKIP):
                 next(excel_spread_cheeks)
             for row in reader:
-                if (row[FIRST_FLOOR_UNIT] in ("11TH", "CYB")):
-                    self.personnel.append(self.pretty_format(row[0:7], max_row_len, self.csv_type))
-                if (row[SECOND_FLOOR_UNIT] in  ("11TH", "CYB")):
-                    self.personnel.append(self.pretty_format(row[12:19], max_row_len, self.csv_type))
-                if (row[THIRD_FLOOR_UNIT] in  ("11TH", "CYB")):
-                    self.personnel.append(self.pretty_format(row[21:28], max_row_len, self.csv_type))
+                
+                self.personnel.append(self.pretty_format(row[0:7], max_row_len, self.csv_type))
+               
+                self.personnel.append(self.pretty_format(row[12:19], max_row_len, self.csv_type))
+               
+                self.personnel.append(self.pretty_format(row[21:28], max_row_len, self.csv_type))
 
             for person_deets in self.personnel:
                 #optional refractor for this? we could make a function that would just take an argument and add to dict
